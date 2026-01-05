@@ -1,0 +1,493 @@
+{
+  "name": "Portfolio A (Social Media Repurposing Agent)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Ai Content Repurposer",
+        "formDescription": "Paste your Youtube link below to generate LinkedIn and Twitter posts.",
+        "formFields": {
+          "values": [
+            {
+              "fieldName": "Youtube Video URL",
+              "fieldLabel": "Youtube Video URL",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.4,
+      "position": [
+        -320,
+        0
+      ],
+      "id": "b1f77d91-24fe-459e-a0cc-e9f847505ce9",
+      "name": "On form submission",
+      "webhookId": "e1d285ac-3e8e-4a5f-a608-8a2c1ddf22af"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This automatically picks the first field from your form, regardless of its name\nconst inputData = $input.item.json;\nconst url = inputData[\"YouTube Video URL\"] || Object.values(inputData)[0];\n\nconst regex = /(?:youtube\\.com\\/(?:[^\\/]+\\/.+\\/|(?:v|e(?:mbed)?)\\/|.*[?&]v=)|youtu\\.be\\/|youtube\\.com\\/shorts\\/)([a-zA-Z0-9_-]{11})/;\nconst match = url ? url.match(regex) : null;\n\nreturn {\n  video_id: match ? match[1] : \"No ID found\"\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        0
+      ],
+      "id": "49f89b7e-b882-44f9-8f6b-80a9f9befdc9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "=https://youtube-transcriptor.p.rapidapi.com/transcript?video_id={{ $json.video_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "223bcac9-868f-4630-8644-06fd6bd9c287",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mLj7Z3HesVh5UCZR",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an expert Social Media Manager. I will provide you with a YouTube video title and description.",
+              "role": "model"
+            },
+            {
+              "content": "=Your goal is to write two things:\n\nA professional LinkedIn post with a hook, 3 bullet points of value, and a question.\n\nA punchy Twitter (X) thread (3 posts) summarizing the video.\n\nVideo Data to use: Title: {{ $json.title }} Description: {{ $json.description }}\n\n--------\nReturn ONLY a valid JSON object. Do not include markdown code blocks like ```json. Output format: { \"linkedin\": \"post text\", \"twitter\": \"thread text\" }"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        0
+      ],
+      "id": "8b0dcb23-b558-4a5e-afc4-48907cda2112",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "02z1AuBjaFZZWnuX",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1SZfNBjBU9dEjvvjfKfcHwn9UEio8iLkoY5atdQryiY8",
+          "mode": "list",
+          "cachedResultName": "Portfolio A (Social Media Repurposing Agent)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SZfNBjBU9dEjvvjfKfcHwn9UEio8iLkoY5atdQryiY8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SZfNBjBU9dEjvvjfKfcHwn9UEio8iLkoY5atdQryiY8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Video Title": "={{ $('HTTP Request').item.json.title }}",
+            "Original URL": "={{ $('On form submission').item.json['Youtube Video URL'] }}",
+            "LinkedIn Draft": "={{ $json.linkedin }}",
+            "Twitter Thread": "={{ $json.twitter }}",
+            "Status": "Pending"
+          },
+          "matchingColumns": [
+            "Video Title"
+          ],
+          "schema": [
+            {
+              "id": "Video Title",
+              "displayName": "Video Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Original URL",
+              "displayName": "Original URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "LinkedIn Draft",
+              "displayName": "LinkedIn Draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Twitter Thread",
+              "displayName": "Twitter Thread",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        464,
+        0
+      ],
+      "id": "bb56b0c2-2064-4575-aa02-4bf264dbf933",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "D91uKEBevC9Q9FqF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the raw text from Gemini's response\nconst rawText = $input.first().json.candidates[0].content.parts[0].text;\n\n// Use regex to find the content between the quotes for each key\nconst linkedinMatch = rawText.match(/\"linkedin\":\\s*\"([\\s\\S]*?)\"/);\nconst twitterMatch = rawText.match(/\"twitter\":\\s*\"([\\s\\S]*?)\"/);\n\nreturn {\n  linkedin: linkedinMatch ? linkedinMatch[1].replace(/\\\\n/g, '\\n') : \"Not found\",\n  twitter: twitterMatch ? twitterMatch[1].replace(/\\\\n/g, '\\n') : \"Not found\"\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        0
+      ],
+      "id": "5fa3744d-490c-4c82-b91e-f7cfbbc037db",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "content": "The Input & Extraction Phase\n\nLogic: This section acts as the \"Content Intake.\" It captures a raw YouTube URL from a user-facing form. It then uses the YouTube API (via HTTP Request) to pull specific metadata—like the video title, description, and high-resolution thumbnail—that the AI will need for context.",
+        "height": 240,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -272
+      ],
+      "id": "fe7db825-57a8-458e-a47c-36bc8057ca37",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "The AI Intelligence \n\nLogic: This is the \"Reasoning Engine.\" We use Gemini 2.5 Flash with a system prompt that defines it as an expert Social Media Manager. The model analyzes the video data and generates two distinct posts. The Code Node then \"cleans\" the AI's response, splitting the raw text into individual data fields (linkedin, discord and  twitter) so they can be saved into separate columns.",
+        "height": 304,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        96,
+        -336
+      ],
+      "id": "eac6cec3-7c75-4055-91b5-5df57da3854e",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "The Data Storage Phase\n\nLogic: This is our \"Content Database.\" Every successful run is logged as a new row in Google Sheets. We set the Status to \"Pending\" by default to ensure no content is ever posted without a human reviewer checking the AI's work first.",
+        "height": 224,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        464,
+        -256
+      ],
+      "id": "6506714b-f676-48e4-a12c-149df9f41645",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1SZfNBjBU9dEjvvjfKfcHwn9UEio8iLkoY5atdQryiY8",
+          "mode": "list",
+          "cachedResultName": "Portfolio A (Social Media Repurposing Agent)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SZfNBjBU9dEjvvjfKfcHwn9UEio8iLkoY5atdQryiY8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SZfNBjBU9dEjvvjfKfcHwn9UEio8iLkoY5atdQryiY8/edit#gid=0"
+        },
+        "event": "rowUpdate",
+        "options": {
+          "columnsToWatch": [
+            "Status"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        528
+      ],
+      "id": "aad5da93-fc11-4d17-a74a-6a094eaf9d30",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "gqXIsDauolp8xISh",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "351febef-52fd-4fc0-9502-ab99d87fbe6f",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "Approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -176,
+        528
+      ],
+      "id": "93276c8f-3b5e-409a-add5-1b1cb99d0f47",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $json['LinkedIn Draft'] }}{{ $('Google Sheets Trigger').item.json['Original URL'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        32,
+        528
+      ],
+      "id": "9698f3e1-5064-4eee-9173-a94ed51bd98f",
+      "name": "Discord",
+      "webhookId": "0889235d-2490-47b3-8d5a-5d459d991089",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "Tv0BTGnw9ch0IBmn",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "The Human-in-the-Loop Approval Phase\n\nLogic: This is the \"Safety Gate.\" This workflow only \"wakes up\" when a user manually changes a row's status in the spreadsheet. The IF Node acts as a filter: if the status is \"Approved,\" it proceeds; if it's anything else, the workflow stops, preventing accidental or unfinished posts from going live.",
+        "height": 304,
+        "width": 224,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        208
+      ],
+      "id": "f41d208c-efdd-4bd0-85ae-f23bc8263ea9",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "The Visual Delivery Phase\n\nLogic: This is the \"Distribution Layer.\" Once approved, the data is transformed into a Rich Embed for Discord. We use an expression to dynamically rebuild the thumbnail image link so the post looks like a professional media card, providing a final visual record of the published content.",
+        "height": 256,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        32,
+        256
+      ],
+      "id": "9628f37a-2d72-4f74-b70d-c54b1de5a3ec",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "bd194881-fd90-4600-8a78-9bb690d49ad3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "091f1f3c64f7cafc6443b1121cd466bb516963c12a153f9d7f5c885c2fe617ba"
+  },
+  "id": "ASqnr2H9niFdLu7r",
+  "tags": [
+    {
+      "updatedAt": "2026-01-05T20:46:34.678Z",
+      "createdAt": "2026-01-05T20:46:34.678Z",
+      "id": "vimlnkW7oeyac58S",
+      "name": "Portfolio"
+    }
+  ]
+}
